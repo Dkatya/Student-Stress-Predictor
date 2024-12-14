@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import joblib  # Ensure joblib is imported
+import subprocess
+import sys
 
 # Install required packages if not installed
 try:
@@ -42,15 +45,21 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Load the pre-trained model
-model = 'https://drive.google.com/file/d/1DafjCYue17R7l26FxwtnhMB9d42I6CB_/view?usp=share_link'
+model_url = 'https://drive.google.com/uc?id=1DafjCYue17R7l26FxwtnhMB9d42I6CB_'
 
-model = joblib.load('stress_model.pkl')
-print(model.__dict__.keys())  # Check attributes and keys
+# Fetch the model from Google Drive
+response = requests.get(model_url)
+if response.status_code == 200:
+    with open('stress_model.pkl', 'wb') as f:
+        f.write(response.content)
 
-
-
-# Get the columns used during training directly from the model
-trained_columns = model.feature_names_in_
+# Load the model using joblib
+try:
+    model = joblib.load('stress_model.pkl')
+    trained_columns = model.feature_names_in_  # Adjust based on model attributes
+    print(model.__dict__.keys())  # Check attributes and keys
+except Exception as e:
+    st.error(f"Error loading model: {e}")
 
 # Function to preprocess input data
 def preprocess_input(data, trained_columns):
@@ -67,6 +76,42 @@ st.write("This app predicts the stress level based on various inputs.")
 
 # Create two columns for input fields
 col1, col2 = st.columns(2)
+
+with col1:
+    gender = st.selectbox('Gender', ['Male', 'Female', 'Other'])
+    grade_level = st.selectbox('Grade Level', ['9', '10', '11', '12'])
+    part_time_job = st.radio('Part-Time Job', ['Yes', 'No'])
+    mental_health_issues = st.radio('Mental Health Issues', ['Yes', 'No'])
+
+with col2:
+    study_time = st.slider('Study Time per Week (hours)', 0, 100)
+    sleep_time = st.slider('Sleep Time per Night (hours)', 0, 12)
+    alcohol_consumption = st.slider('Alcohol Consumption (times/week)', 0, 7)
+    family_time = st.slider('Family Time per Week (hours)', 0, 50)
+
+# Button to predict
+if st.button('Predict'):
+    input_data = {
+        'Gender': gender,
+        'Grade Level': grade_level,
+        'Part-Time Job': part_time_job,
+        'Mental Health Issues': mental_health_issues,
+        'Study Time': study_time,
+        'Sleep Time': sleep_time,
+        'Alcohol Consumption': alcohol_consumption,
+        'Family Time': family_time
+    }
+    
+    # Preprocess the input data
+    input_df = pd.DataFrame([input_data])
+    processed_data = preprocess_input(input_df, trained_columns)
+    
+    # Predict stress level
+    try:
+        prediction = model.predict(processed_data)
+        st.write("Predicted Stress Level:", prediction[0])
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
 
 with col1:
     age = st.number_input('Age (18-100)', min_value=18, max_value=100, value=20)
