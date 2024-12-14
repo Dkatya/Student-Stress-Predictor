@@ -44,6 +44,10 @@ st.markdown("""
 # Load the pre-trained model
 model = 'https://drive.google.com/file/d/1DafjCYue17R7l26FxwtnhMB9d42I6CB_/view?usp=share_link'
 
+model = joblib.load('stress_model.pkl')
+print(model.__dict__.keys())  # Check attributes and keys
+
+
 
 # Get the columns used during training directly from the model
 trained_columns = model.feature_names_in_
