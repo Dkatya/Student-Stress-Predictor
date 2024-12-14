@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
-import joblib
+
+# Install required packages if not installed
+try:
+    import joblib
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "joblib"])
 
 # Set page config - This should be the first Streamlit command
 st.set_page_config(
